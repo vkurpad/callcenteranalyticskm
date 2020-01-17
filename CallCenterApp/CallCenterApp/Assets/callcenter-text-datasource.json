@@ -1,0 +1,9 @@
+{
+  "name": "[DatasourceName]",
+  "description": "Callcenter Analytics",
+  "type": "azureblob",
+  "credentials": { "connectionString": "[STORAGECONNECTIONSTRING]" },
+  "container": { "name": "[Container]" },
+  "dataChangeDetectionPolicy": null,
+  "dataDeletionDetectionPolicy": null
+}  

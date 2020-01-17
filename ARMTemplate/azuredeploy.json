@@ -1,0 +1,349 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "prefixName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the function app that you wish to create."
+      }
+    },
+    "searchSku": {
+      "type": "string",
+      "defaultValue": "standard",
+      "allowedValues": [
+        "free",
+        "basic",
+        "standard"
+      ]
+    },
+    "sku": {
+      "type": "string",
+      "allowedValues": [
+        "Free",
+        "Shared",
+        "Basic",
+        "Standard"
+      ],
+      "defaultValue": "Standard",
+      "metadata": {
+        "description": "The pricing tier for the hosting plan."
+      }
+    },
+    "workerSize": {
+      "type": "string",
+      "allowedValues": [
+        "0",
+        "1",
+        "2"
+      ],
+      "defaultValue": "0",
+      "metadata": {
+        "description": "The instance size of the hosting plan (small, medium, or large)."
+      }
+    },
+    "storageAccountType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_ZRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "Storage Account type"
+      }
+    },
+    "repoURL": {
+      "type": "string",
+      "defaultValue": "https://github.com/vkurpad/CallCenterSkills.git",
+      "metadata": {
+        "description": "The URL for the GitHub repository that contains the SKILLS FUNCTIONS project to deploy."
+      }
+    },
+    "branch": {
+      "type": "string",
+      "defaultValue": "master",
+      "metadata": {
+        "description": "The branch of the GitHub repository to use."
+      }
+    },
+     
+      "appSku": {
+        "type": "string",
+        "allowedValues": [
+          "F1",
+          "D1",
+          "B1",
+          "B2",
+          "B3",
+          "S1",
+          "S2",
+          "S3",
+          "P1",
+          "P2",
+          "P3",
+          "P4"
+        ],
+        "defaultValue": "S1",
+        "metadata": {
+          "description": "The pricing tier for the hosting plan."
+        }
+      },
+      "appWorkerSize": {
+        "type": "string",
+        "allowedValues": [
+          "0",
+          "1",
+          "2"
+        ],
+        "defaultValue": "0",
+        "metadata": {
+          "description": "The instance size of the hosting plan (small, medium, or large)."
+        }
+      },
+      
+      "appRepoURL": {
+        "type": "string",
+        "defaultValue": "https://github.com/vkurpad/CallCenterApp.git",
+        "metadata": {
+          "description": "The URL for the GitHub repository that contains the SEARCH WEBAPP project to deploy."
+        }
+      },
+      "appBranch": {
+        "type": "string",
+        "defaultValue": "master",
+        "metadata": {
+          "description": "The appBranch of the GitHub repository to use."
+        }
+      },
+      "location": {
+        "type": "string",
+        "defaultValue": "[resourceGroup().location]",
+        "metadata": {
+          "description": "Location for all resources."
+        }
+      }
+    },
+    "variables": {
+    "functionAppName": "[concat(parameters('prefixName'), '-SkillFns')]",
+    "hostingPlanName": "[concat(parameters('prefixName'), '-plan')]",
+    "storageAccountName": "[concat(parameters('prefixName'),'stg', uniquestring(resourceGroup().id))]",
+    "s2tCogSvc": "[concat(parameters('prefixName'), '-S2tCogSvc')]",
+    "allCogSvc": "[concat(parameters('prefixName'), '-AllCogSvc')]",
+    "searchSvc": "[concat(parameters('prefixName'), 'search')]",
+    "initSiteName": "[concat(parameters('prefixName'), 'callcenterapp')]",
+    "appInsightsName": "[concat(parameters('prefixName'), '-insights')]",
+    "host": "[resourceId('Microsoft.Web/sites/host', variables('functionAppName'), 'default')]"
+  },
+    "resources": [
+         {
+            "type": "microsoft.insights/components",
+            "apiVersion": "2015-05-01",
+            "name": "[variables('appInsightsName')]",
+            "location": "[parameters('location')]",
+            "kind": "web",
+            "properties": {
+                "Application_Type": "web",
+                "Flow_Type": "Redfield",
+                "Request_Source": "AppServiceEnablementCreate"
+            }
+        },
+        {
+        "type": "Microsoft.CognitiveServices/accounts",
+        "apiVersion": "2017-04-18",
+        "name": "[variables('s2tCogSvc')]",
+        "location": "[parameters('location')]",
+        "sku": {
+            "name": "S0"
+        },
+        "kind": "SpeechServices",
+        "properties": {}
+    },
+    {
+        "type": "Microsoft.CognitiveServices/accounts",
+        "apiVersion": "2017-04-18",
+        "name": "[variables('allCogSvc')]",
+        "location": "[parameters('location')]",
+        "sku": {
+            "name": "S0"
+        },
+        "kind": "CognitiveServices",
+        "properties": {}
+    },
+    {
+        "type": "Microsoft.Search/searchServices",
+        "apiVersion": "2015-08-19",
+        "name": "[variables('searchSvc')]",
+        "location": "[parameters('location')]",
+        "sku": {
+            "name": "[parameters('searchSku')]"
+        },
+        "properties": {
+            "replicaCount": 1,
+            "partitionCount": 1,
+            "hostingMode": "Default"
+        }
+    },
+     {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('storageAccountName')]",
+      "apiVersion": "2015-06-15",
+      "location": "[parameters('location')]",
+      "properties": {
+        "accountType": "[parameters('storageAccountType')]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2015-04-01",
+      "name": "[variables('hostingPlanName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "name": "[variables('hostingPlanName')]",
+        "sku": "[parameters('sku')]",
+        "workerSize": "[parameters('workerSize')]",
+        "hostingEnvironment": "",
+        "numberOfWorkers": 1
+      }
+    },
+    {
+      "apiVersion": "2015-08-01",
+      "type": "Microsoft.Web/sites",
+      "name": "[variables('functionAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "functionapp",
+      "properties": {
+        "name": "[variables('functionAppName')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+        "hostingEnvironment": "",
+        "clientAffinityEnabled": false,
+        "siteConfig": {
+          "alwaysOn": true,
+          "cors": {
+            "allowedOrigins": [
+              "*"
+            ]
+          },
+          "appSettings": [
+            {
+              "name": "Ocp-Apim-Subscription-Key",
+              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts',variables('s2tCogSvc')),'2016-02-01-preview').key1]"
+            },
+            {
+              "name": "region",
+              "value": "[resourceGroup().location]"
+            },
+            {
+              "name": "StorageConnection",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2015-05-01-preview').key1,';')]"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2015-05-01-preview').key1,';')]"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2015-05-01-preview').key1,';')]"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~2"
+            },
+            {
+              "name": "AppInsights_InstrumentationKey",
+              "value": "[reference(concat('microsoft.insights/components/', variables('appInsightsName'))).InstrumentationKey]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts',variables('s2tCogSvc'))]",
+        "[resourceId('microsoft.insights/components',variables('appInsightsName'))]"
+      ],
+      "resources": [
+        {
+          "apiVersion": "2015-08-01",
+          "name": "web",
+          "type": "sourcecontrols",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', variables('functionAppName'))]"
+          ],
+          "properties": {
+            "repoUrl": "[parameters('repoURL')]",
+            "branch": "[parameters('branch')]",
+            "IsManualIntegration": true
+          }
+        }
+      ]
+    },
+    {
+      "apiVersion": "2015-08-01",
+      "name": "[variables('initSiteName')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('allCogSvc'))]",
+        "[resourceId('Microsoft.Search/searchServices', variables('searchSvc'))]",
+        "[resourceId('microsoft.insights/components',variables('appInsightsName'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[variables('hostingPlanName')]",
+        "siteConfig": {
+          
+          "appSettings": [
+            {
+              "name": "allCogSvc",
+              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts',variables('allCogSvc')),'2016-02-01-preview').key1]"
+            },
+            
+            {
+              "name": "searchMgmtKey",
+              "value": "[listAdminKeys(resourceId('Microsoft.Search/searchServices',variables('searchSvc')),'2015-08-19').primaryKey]"
+            },
+            {
+              "name": "storageConnectionString",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2015-05-01-preview').key1,';')]"
+            },
+            {
+              "name": "prefixName",
+              "value": "[parameters('prefixName')]"
+            },
+            {
+              "name": "region",
+              "value": "[resourceGroup().location]"
+            },
+            {
+              "name": "functionKey",
+              "value": "[listkeys(variables('host'), '2018-02-01').functionKeys.default]"
+            },
+            {
+              "name": "AppInsights_InstrumentationKey",
+              "value": "[reference(concat('microsoft.insights/components/', variables('appInsightsName'))).InstrumentationKey]"
+            }
+            
+          ]
+        }
+      },    
+      "resources": [    
+        {
+          "apiVersion": "2015-08-01",
+          "name": "web",
+          "type": "sourcecontrols",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', variables('initSiteName'))]"
+          ],
+          "properties": {
+            "repoURL": "[parameters('appRepoURL')]",
+            "branch": "[parameters('appBranch')]",
+            "IsManualIntegration": true
+          }
+        }
+      ]
+    }
+    ]
+  }

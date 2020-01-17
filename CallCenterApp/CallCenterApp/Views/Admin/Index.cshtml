@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "Administration";
+}
+
+<h1>Administration</h1>
+
+
+
+@if (ViewData["status"] == "Unauthorized")
+{
+    <p>You need to add a code = { your application insights key } to the url</p>
+}
+else
+{
+
+    <form action="/admin/init" method="post">
+        <input type="submit" name="upvote" value="Initialize" />
+    </form>
+}
+
+
+

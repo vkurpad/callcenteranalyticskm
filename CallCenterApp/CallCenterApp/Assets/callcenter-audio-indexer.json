@@ -1,0 +1,40 @@
+{
+  "name": "[IndexerName]",
+  "description": "",
+  "dataSourceName": "[DatasourceName]",
+  "skillsetName": "[SkillsetName]",
+  "targetIndexName": "[IndexName]",
+  "disabled": null,
+  "schedule": {
+    "interval": "PT10M",
+    "startTime": "2015-01-01T00:00:00Z"
+  },
+  "parameters": {
+    "batchSize": null,
+    "maxFailedItems": null,
+    "maxFailedItemsPerBatch": null,
+    "base64EncodeKeys": false,
+    "configuration": {
+      "imageAction": "none",
+      "dataToExtract": "storageMetadata"
+    }
+  },
+  "fieldMappings": [
+    {
+      "sourceFieldName": "metadata_storage_path",
+      "targetFieldName": "metadata_storage_path",
+      "mappingFunction": null
+    }
+  ],
+  "outputFieldMappings": [
+    {
+      "sourceFieldName": "/document/transcription_job",
+      "targetFieldName": "transcription_job",
+      "mappingFunction": null
+    }
+  ],
+  "cache": {
+    "enableReprocessing": true,
+    "storageConnectionString": "[STORAGECONNECTIONSTRING]"
+  }
+}

@@ -1,0 +1,435 @@
+{
+  "name": "callcenter-text-skillset",
+  "description": "Skillset to enrich the transcribed text",
+  "skills": [
+    {
+      "@odata.type": "#Microsoft.Skills.Util.ConditionalSkill",
+      "name": "Filter Customer Utterances",
+      "description": null,
+      "context": "/document/SegmentResults/*",
+      "inputs": [
+        {
+          "name": "condition",
+          "source": "= $(/document/SegmentResults/*/ChannelNumber) == '1'",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "whenTrue",
+          "source": "/document/SegmentResults/*/NBest/0/Display",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "whenFalse",
+          "source": "= null",
+          "sourceContext": null,
+          "inputs": []
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "targetName": "customer_utterance"
+        }
+      ]
+    },
+    {
+      "@odata.type": "#Microsoft.Skills.Text.KeyPhraseExtractionSkill",
+      "name": "KeyPhrase On customer utterance in english",
+      "description": null,
+      "context": "/document/SegmentResults/*/customer_utterance",
+      "defaultLanguageCode": "en",
+      "maxKeyPhraseCount": null,
+      "inputs": [
+        {
+          "name": "text",
+          "source": "/document/SegmentResults/*/customer_utterance",
+          "sourceContext": null,
+          "inputs": []
+        }
+      ],
+      "outputs": [
+        {
+          "name": "keyPhrases",
+          "targetName": "key_phrases"
+        }
+      ]
+    },
+    {
+      "@odata.type": "#Microsoft.Skills.Text.SentimentSkill",
+      "name": "Sentiment On customer utterance in english",
+      "description": null,
+      "context": "/document/SegmentResults/*/customer_utterance",
+      "defaultLanguageCode": "en",
+      "inputs": [
+        {
+          "name": "text",
+          "source": "/document/SegmentResults/*/customer_utterance",
+          "sourceContext": null,
+          "inputs": []
+        }
+      ],
+      "outputs": [
+        {
+          "name": "score",
+          "targetName": "sentiment"
+        }
+      ]
+    },
+    {
+      "@odata.type": "#Microsoft.Skills.Text.EntityRecognitionSkill",
+      "name": "EntityRecognition On customer utterance in english",
+      "description": null,
+      "context": "/document/SegmentResults/*/customer_utterance",
+      "categories": [
+        "Person",
+        "Location",
+        "Organization"
+      ],
+      "defaultLanguageCode": "en",
+      "minimumPrecision": 0.5,
+      "includeTypelessEntities": null,
+      "inputs": [
+        {
+          "name": "text",
+          "source": "/document/SegmentResults/*/customer_utterance",
+          "sourceContext": null,
+          "inputs": []
+        }
+      ],
+      "outputs": [
+        {
+          "name": "persons",
+          "targetName": "people"
+        },
+        {
+          "name": "locations",
+          "targetName": "locations"
+        },
+        {
+          "name": "organizations",
+          "targetName": "organizations"
+        },
+        {
+          "name": "namedEntities",
+          "targetName": "entities"
+        }
+      ]
+    },
+    {
+      "@odata.type": "#Microsoft.Skills.Util.ShaperSkill",
+      "name": "ComplexType-Conversation",
+      "description": "Create the conversation complex type",
+      "context": "/document/SegmentResults/*",
+      "inputs": [
+        {
+          "name": "speaker",
+          "source": "/document/SegmentResults/*/ChannelNumber",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "text",
+          "source": "/document/SegmentResults/*/NBest/0/Display",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "offset",
+          "source": "/document/SegmentResults/*/Offset",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "duration",
+          "source": "/document/SegmentResults/*/Duration",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "offset_in_seconds",
+          "source": "/document/SegmentResults/*/OffsetInSeconds",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "duration_in_seconds",
+          "source": "/document/SegmentResults/*/DurationInSeconds",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "sentiment",
+          "source": "/document/SegmentResults/*/customer_utterance/sentiment",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "key_phrases",
+          "source": "/document/SegmentResults/*/customer_utterance/key_phrases/*",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "people",
+          "source": "/document/SegmentResults/*/customer_utterance/people/*",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "locations",
+          "source": "/document/SegmentResults/*/customer_utterance/locations/*",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "organizations",
+          "source": "/document/SegmentResults/*/customer_utterance/organizations/*",
+          "sourceContext": null,
+          "inputs": []
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "targetName": "conversation"
+        }
+      ]
+    },
+    {
+      "@odata.type": "#Microsoft.Skills.Custom.WebApiSkill",
+      "name": "SortAndSummarize",
+      "description": "Summarize and sort",
+      "context": "/document",
+      "uri": "https://[FUNCTIONHOST].azurewebsites.net/api/SortAndSummarize?code=[FUNCTIONKEY]",
+      "httpMethod": "POST",
+      "timeout": "PT1M30S",
+      "batchSize": 1,
+      "degreeOfParallelism": null,
+      "inputs": [
+        {
+          "name": "conversation",
+          "source": "/document/SegmentResults/*/conversation",
+          "sourceContext": null,
+          "inputs": []
+        }
+      ],
+      "outputs": [
+        {
+          "name": "result",
+          "targetName": "resultConversation"
+        },
+        {
+          "name": "summary",
+          "targetName": "summary"
+        }
+      ],
+      "httpHeaders": {}
+    },
+    {
+            "@odata.type": "#Microsoft.Skills.Util.ShaperSkill",
+            "name": "Projection Shaper",
+            "description": "Create the conversation complex type",
+            "context": "/document",
+            "inputs": [
+                {
+                    "name": "AudioLengthInSeconds",
+                    "source": "/document/AudioLengthInSeconds",
+                    "sourceContext": null,
+                    "inputs": []
+                },
+                {
+                    "name": "turns",
+                    "source": "/document/summary/turns",
+                    "sourceContext": null,
+                    "inputs": []
+                },
+                {
+                    "name": "lowestSentiment",
+                    "source": "/document/summary/lowestSentiment",
+                    "sourceContext": null,
+                    "inputs": []
+                },
+                {
+                    "name": "highestSentiment",
+                    "source": "/document/summary/highestSentiment",
+                    "sourceContext": null,
+                    "inputs": []
+                },
+                {
+                    "name": "averageSentiment",
+                    "source": "/document/summary/averageSentiment",
+                    "sourceContext": null,
+                    "inputs": []
+                },
+                {
+                    "name": "maxChangeIndex",
+                    "source": "/document/summary/moment/turn",
+                    "sourceContext": null,
+                    "inputs": []
+                },
+                {
+                    "name": "maxChangeValue",
+                    "source": "/document/summary/moment/sentimentDrop",
+                    "sourceContext": null,
+                    "inputs": []
+                },
+                {
+                    "name": "maxChangeOffset",
+                    "source": "/document/summary/moment/offset",
+                    "sourceContext": null,
+                    "inputs": []
+                },
+                {
+                    "name": "conversation",
+                    "source": "/document/resultConversation",
+                    "sourceContext": null,
+                    "inputs": []
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "output",
+                    "targetName": "tableProjection"
+                }
+            ]
+        },
+    {
+      "@odata.type": "#Microsoft.Skills.Util.ShaperSkill",
+      "name": "Shaper index summary",
+      "description": "Shaper for index summary",
+      "context": "/document",
+      "inputs": [
+        {
+          "name": "lowest_sentiment",
+          "source": "/document/summary/lowestSentiment",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "highest_sentiment",
+          "source": "/document/summary/highestSentiment",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "max_change_index",
+          "source": "/document/summary/moment/turn",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "max_change",
+          "source": "/document/summary/moment/sentimentDrop",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "max_change_time",
+          "source": "/document/summary/moment/offset",
+          "sourceContext": null,
+          "inputs": []
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "targetName": "index_summary"
+        }
+      ]
+    }
+  ],
+  "cognitiveServices": {
+    "@odata.type": "#Microsoft.Azure.Search.CognitiveServicesByKey",
+    "description": "Cognitive Services Key for TA Skills",
+    "key": "[COGNITIVESERVICESKEY]"
+  },
+  "knowledgeStore": {
+    "storageConnectionString": "[STORGECONNECTIONSTRING]",
+    "projections": [
+      {
+        "tables": [
+          {
+            "tableName": "calls",
+            "referenceKeyName": null,
+            "generatedKeyName": "CallId",
+            "source": "/document/tableProjection",
+            "sourceContext": null,
+            "inputs": []
+          },
+          {
+            "tableName": "conversation",
+            "referenceKeyName": null,
+            "generatedKeyName": "ConversationId",
+            "source": "/document/tableProjection/conversation/*",
+            "sourceContext": null,
+            "inputs": []
+          },
+          {
+            "tableName": "convokeyphrases",
+            "referenceKeyName": null,
+            "generatedKeyName": "KeyPhraseId",
+            "source": null,
+            "sourceContext": "/document/tableProjection/conversation/*/key_phrases/*",
+            "inputs": [
+              {
+                "name": "keyphrase",
+                "source": "/document/tableProjection/conversation/*/key_phrases/*",
+                "sourceContext": null,
+                "inputs": []
+              }
+            ]
+          },
+          {
+            "tableName": "convolocations",
+            "referenceKeyName": null,
+            "generatedKeyName": "LocId",
+            "source": null,
+            "sourceContext": "/document/tableProjection/conversation/*/locations/*",
+            "inputs": [
+              {
+                "name": "location",
+                "source": "/document/tableProjection/conversation/*/locations/*",
+                "sourceContext": null,
+                "inputs": []
+              }
+            ]
+          },
+          {
+            "tableName": "convopeople",
+            "referenceKeyName": null,
+            "generatedKeyName": "PersonId",
+            "source": null,
+            "sourceContext": "/document/tableProjection/conversation/*/people/*",
+            "inputs": [
+              {
+                "name": "person",
+                "source": "/document/tableProjection/conversation/*/people/*",
+                "sourceContext": null,
+                "inputs": []
+              }
+            ]
+          },
+          {
+            "tableName": "convoorgs",
+            "referenceKeyName": null,
+            "generatedKeyName": "OrgId",
+            "source": null,
+            "sourceContext": "/document/tableProjection/conversation/*/organizations/*",
+            "inputs": [
+              {
+                "name": "person",
+                "source": "/document/tableProjection/conversation/*/organizations/*",
+                "sourceContext": null,
+                "inputs": []
+              }
+            ]
+          }
+        ],
+        "objects": [],
+        "files": []
+      }
+    ]
+  }
+}

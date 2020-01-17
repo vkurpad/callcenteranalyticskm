@@ -1,0 +1,58 @@
+{
+  "name": "[IndexerName]",
+  "description": "",
+  "dataSourceName": "[DatasourceName]",
+  "skillsetName": "[SkillsetName]",
+  "targetIndexName": "[IndexName]",
+  "disabled": null,
+  "schedule": {
+    "interval": "PT1H",
+    "startTime": "2015-01-01T00:00:00Z"
+  },
+  "parameters": {
+    "batchSize": null,
+    "maxFailedItems": null,
+    "maxFailedItemsPerBatch": null,
+    "base64EncodeKeys": false,
+    "configuration": {
+      "imageAction": "none",
+      "dataToExtract": "contentAndMetadata",
+      "parsingMode": "jsonArray",
+      "documentRoot": "/AudioFileResults"
+    }
+  },
+  "fieldMappings": [
+    {
+      "sourceFieldName": "AudioFileUrl",
+      "targetFieldName": "audio_file",
+      "mappingFunction": {
+        "name": "extractTokenAtPosition",
+        "parameters": {
+          "delimiter": "?",
+          "position": 0
+        }
+      }
+    }
+  ],
+  "outputFieldMappings": [
+    {
+      "sourceFieldName": "/document/resultConversation",
+      "targetFieldName": "conversation",
+      "mappingFunction": null
+    },
+    {
+      "sourceFieldName": "/document/language_code",
+      "targetFieldName": "language",
+      "mappingFunction": null
+    },
+    {
+      "sourceFieldName": "/document/index_summary",
+      "targetFieldName": "summary",
+      "mappingFunction": null
+    }
+  ],
+  "cache": {
+    "enableReprocessing": true,
+    "storageConnectionString": "[STORAGECONNECTIONSTRING]"
+  }
+}

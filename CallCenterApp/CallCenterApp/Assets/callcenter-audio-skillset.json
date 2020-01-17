@@ -1,0 +1,44 @@
+{
+  "name": "callcenter-audio-skillset",
+  "description": "Skillset to generate the transcribed text",
+  "skills": [
+    {
+      "@odata.type": "#Microsoft.Skills.Custom.WebApiSkill",
+      "name": "SubmitTranscription",
+      "description": "Submit the S2T transcription job",
+      "context": "/document",
+      "uri": "https://[FUNCTIONHOST].azurewebsites.net/api/SubmitTranscription?code=[FUNCTIONKEY]",
+      "httpMethod": "POST",
+      "timeout": "PT1M30S",
+      "batchSize": 1,
+      "degreeOfParallelism": null,
+      "inputs": [
+        {
+          "name": "recUrl",
+          "source": "/document/metadata_storage_path",
+          "sourceContext": null,
+          "inputs": []
+        },
+        {
+          "name": "recSasToken",
+          "source": "/document/metadata_storage_sas_token",
+          "sourceContext": null,
+          "inputs": []
+        }
+      ],
+      "outputs": [
+        {
+          "name": "jobId",
+          "targetName": "transcription_job"
+        }
+      ],
+      "httpHeaders": {}
+    }
+  ],
+  "cognitiveServices": {
+    "@odata.type": "#Microsoft.Azure.Search.CognitiveServicesByKey",
+    "description": "All in One KEy for the Cognitive Services",
+    "key": "[COGNITIVESERVICESKEY]"
+  },
+  "knowledgeStore": null
+}
