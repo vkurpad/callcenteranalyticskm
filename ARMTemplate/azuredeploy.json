@@ -151,16 +151,19 @@
             }
         },
         {
-        "type": "Microsoft.CognitiveServices/accounts",
-        "apiVersion": "2017-04-18",
-        "name": "[variables('s2tCogSvc')]",
-        "location": "[parameters('location')]",
-        "sku": {
-            "name": "S0"
+            "type": "Microsoft.CognitiveServices/accounts",
+            "apiVersion": "2017-04-18",
+            "name": "[variables('s2tCogSvc')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "S0"
+            },
+            "kind": "SpeechServices",
+            "properties": {
+                "publicNetworkAccess": "Enabled"
+            }
         },
-        "kind": "SpeechServices",
-        "properties": {}
-    },
+        
     {
         "type": "Microsoft.CognitiveServices/accounts",
         "apiVersion": "2017-04-18",

@@ -15,6 +15,7 @@ using CallCenterSkills.Models;
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Linq;
+using System.Globalization;
 
 namespace CallCenterSkills
 {
@@ -33,7 +34,7 @@ namespace CallCenterSkills
             req.Body.Position = 0;
             try
             {
-                string sasToken;
+                string destSasUrl;
                 string skillName = executionContext.FunctionName;
                 IEnumerable<WebApiRequestRecord> requestRecords = WebApiSkillHelpers.GetRequestRecords(req);
                 if (requestRecords == null)
@@ -41,6 +42,7 @@ namespace CallCenterSkills
                     return new BadRequestObjectResult($"{skillName} - Invalid request record array.");
                 }
                 string storageConnectionString = Environment.GetEnvironmentVariable("StorageConnection");
+                string region = Environment.GetEnvironmentVariable("region");
 
                 CloudStorageAccount storageAccount;
                 if (CloudStorageAccount.TryParse(storageConnectionString, out storageAccount))
@@ -48,7 +50,7 @@ namespace CallCenterSkills
                     CloudBlobClient cloudBlobClient = storageAccount.CreateCloudBlobClient();
                     CloudBlobContainer cloudBlobContainer = cloudBlobClient.GetContainerReference("transcribed");
                     await cloudBlobContainer.CreateIfNotExistsAsync();
-                    sasToken = GetContainerSasUri(cloudBlobContainer);
+                    destSasUrl = GetContainerSasUri(cloudBlobContainer);
                 }
                 else
                 {
@@ -64,26 +66,29 @@ namespace CallCenterSkills
                         var recUrl = inRecord.Data["recUrl"] as string;
                         var recSasToken = inRecord.Data["recSasToken"] as string;
 
-                        Transcription tc = new Transcription();
-
-                        tc.recordingsUrls = new string[] { recUrl + recSasToken };
-                        tc.models = null;
-                        tc.locale = "en-US";
-                        tc.name = "foobars";
-                        tc.description = "bar";
-                        tc.properties = new Properties();
-                        tc.properties.AddDiarization = "True";
-                        tc.properties.AddSentiment = "True";
-                        tc.properties.AddWordLevelTimestamps = "True";
-                        tc.properties.ProfanityFilterMode = "Masked";
-                        tc.properties.PunctuationMode = "DictatedAndAutomatic";
-                        tc.properties.TranscriptionResultsContainerUrl = sasToken;
+                        Transcription tc = new Transcription()
+                        {
+                            ContentUrls = new[] { new Uri(recUrl + recSasToken) },
+                            DisplayName = "Transcription",
+                            Locale = "en-US",
+                            model = null,
+                            properties = new Properties
+                            {
+                                diarizationEnabled = true,
+                                wordLevelTimestampsEnabled = true,
+                                PunctuationMode = "DictatedAndAutomatic",
+                                destinationContainerUrl = destSasUrl
+                            }
+                            
+                        };
+                       
+                        
 
 
                         var client = new HttpClient();
                         client.Timeout = TimeSpan.FromMinutes(25);
-                        client.BaseAddress = new UriBuilder(Uri.UriSchemeHttps, "southcentralus.cris.ai", 443).Uri;
-                        string path = "api/speechtotext/v3.0-beta1/Transcriptions";
+                        client.BaseAddress = new UriBuilder(Uri.UriSchemeHttps, $"{region}.api.cognitive.microsoft.com", 443).Uri;
+                        string path = "speechtotext/v3.0/transcriptions";
                         client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", Environment.GetEnvironmentVariable("Ocp-Apim-Subscription-Key"));
                         string res = Newtonsoft.Json.JsonConvert.SerializeObject(tc);
                         StringContent sc = new StringContent(res);
