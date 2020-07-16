@@ -81,9 +81,6 @@ namespace CallCenterSkills
                             }
                             
                         };
-                       
-                        
-
 
                         var client = new HttpClient();
                         client.Timeout = TimeSpan.FromMinutes(25);
@@ -93,7 +90,6 @@ namespace CallCenterSkills
                         string res = Newtonsoft.Json.JsonConvert.SerializeObject(tc);
                         StringContent sc = new StringContent(res);
                         sc.Headers.ContentType = JsonMediaTypeFormatter.DefaultMediaType;
-
                         using (var resp = await client.PostAsync(path, sc))
                         {
                             if (!resp.IsSuccessStatusCode)
